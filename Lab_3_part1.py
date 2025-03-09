@@ -10,6 +10,7 @@ from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from matplotlib.colors import ListedColormap
 from collections import Counter
+from sklearn.metrics import roc_curve
 
 #  Реализация KNN с нуля
 class KNN:
@@ -141,6 +142,7 @@ print("\n================= 11. Выбор лучшей модели ============
 if results:
     best_model = max(results, key=lambda x: results[x][-1] if isinstance(results[x][-1], float) else results[x][-2])
     print(f"Лучшая модель: {best_model}")
+
 else:
     print("Не удалось выбрать лучшую модель.")
 
@@ -169,6 +171,28 @@ def plot_decision_boundary(model, X, y, feature_names):
     except Exception as e:
         print(f"Ошибка при построении границ классов: {e}")
 
+
+#print("\n================= 13. Функция для построения ROC-кривой =================")
+def plot_roc_curve(y_train, y_train_prob, y_test, y_test_prob,name):
+    fpr_train, tpr_train, _ = roc_curve(y_train, y_train_prob)
+    fpr_test, tpr_test, _ = roc_curve(y_test, y_test_prob)
+    
+    plt.figure(figsize=(8, 6))
+    plt.plot(fpr_train, tpr_train, color='green', label='ROC curve Train')
+    plt.plot(fpr_test, tpr_test, color='blue', label='ROC curve Test')
+    plt.plot([0, 1], [0, 1], color='gray', linestyle='--')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title(f'Receiver Operating Characteristic ({name})')
+    plt.legend()
+    plt.show()
+
 knn_selected = KNeighborsClassifier(n_neighbors=5)
 knn_selected.fit(X_selected_scaled, y_selected)
 plot_decision_boundary(knn_selected, X_selected_scaled, y_selected, selected_features)
+# Вызов функции построения ROC-кривой после обучения всех моделей
+for name, model in models.items():
+    if hasattr(model, "predict_proba"):
+        y_train_prob = model.predict_proba(X_train)[:, 1]
+        y_test_prob = model.predict_proba(X_val)[:, 1]
+        plot_roc_curve(y_train, y_train_prob, y_val, y_test_prob,name)
